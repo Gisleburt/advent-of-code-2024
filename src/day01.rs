@@ -15,7 +15,7 @@ impl Solution for AdventPuzzle {
         left.sort();
         right.sort();
 
-        let total: u64 = left
+        let total: usize = left
             .into_iter()
             .zip(right)
             .map(|(left, right)| left.abs_diff(right))
@@ -29,14 +29,14 @@ impl Solution for AdventPuzzle {
 
         let total: usize = left
             .iter()
-            .map(|l| right.iter().filter(|r| *r == l).count() * *l as usize)
+            .map(|l| right.iter().copied().filter(|r| r == l).count() * l)
             .sum();
 
         total.to_string()
     }
 }
 
-fn parse_pair(input: &str) -> IResult<&str, (u64, u64), ErrorTree<&str>> {
+fn parse_pair(input: &str) -> IResult<&str, (usize, usize), ErrorTree<&str>> {
     separated_pair(
         digit1.map_res(str::parse).context("Should be a number"),
         space1.context("Pairs of numbers should be separated by spaces"),
@@ -45,13 +45,13 @@ fn parse_pair(input: &str) -> IResult<&str, (u64, u64), ErrorTree<&str>> {
     .parse(input)
 }
 
-fn parse_list(input: &str) -> IResult<&str, (Vec<u64>, Vec<u64>), ErrorTree<&str>> {
+fn parse_list(input: &str) -> IResult<&str, (Vec<usize>, Vec<usize>), ErrorTree<&str>> {
     separated_list1(line_ending, parse_pair)
         .map(|list| list.into_iter().unzip())
         .parse(input)
 }
 
-fn get_list(input: &str) -> Result<(Vec<u64>, Vec<u64>), ErrorTree<&str>> {
+fn get_list(input: &str) -> Result<(Vec<usize>, Vec<usize>), ErrorTree<&str>> {
     final_parser(parse_list.terminated(line_ending.opt()).all_consuming())(input)
 }
 
