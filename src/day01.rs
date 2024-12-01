@@ -23,8 +23,15 @@ impl Solution for AdventPuzzle {
         total.to_string()
     }
 
-    fn part2(_input: &str) -> String {
-        todo!()
+    fn part2(input: &str) -> String {
+        let (left, right) = parse_list(input).expect("Advent Puzzle parsing failed").1;
+
+        let total: usize = left
+            .iter()
+            .map(|l| right.iter().filter(|r| *r == l).count() * *l as usize)
+            .sum();
+
+        total.to_string()
     }
 }
 
@@ -45,7 +52,6 @@ fn parse_list(input: &str) -> IResult<&str, (Vec<u64>, Vec<u64>)> {
 mod test {
     use super::*;
 
-    #[ignore]
     #[test]
     fn test_part1() {
         let input = "3   4
@@ -57,10 +63,14 @@ mod test {
         assert_eq!(AdventPuzzle::part1(input), "11");
     }
 
-    #[ignore]
     #[test]
     fn test_part2() {
-        let input = "";
-        assert_eq!(AdventPuzzle::part2(input), "");
+        let input = "3   4
+4   3
+2   5
+1   3
+3   9
+3   3";
+        assert_eq!(AdventPuzzle::part2(input), "31");
     }
 }
