@@ -44,11 +44,15 @@ struct Opt {
 
 fn main() {
     let opt = Opt::from_args();
+    let input_file = format!("inputs/d{:0>2}.txt", opt.day);
     let input_path = opt
         .input
-        .unwrap_or_else(|| PathBuf::from(format!("inputs/d{:0>2}.txt", opt.day)));
+        .unwrap_or_else(|| PathBuf::from(&input_file));
 
-    let input = read_to_string(input_path).expect("input not found");
+    let input = match read_to_string(input_path) {
+        Ok(input) => input,
+        Err(_) => panic!("Input not found: {input_file}")
+    };
 
     let start = Instant::now();
     let result = match (opt.day, opt.part) {
