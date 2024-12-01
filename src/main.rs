@@ -25,12 +25,12 @@ mod day24;
 mod day25;
 mod solution;
 
+use crate::solution::Solution;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use std::process::exit;
 use std::time::Instant;
 use structopt::StructOpt;
-use crate::solution::Solution;
 
 #[derive(Debug, StructOpt)]
 struct Opt {
@@ -45,13 +45,11 @@ struct Opt {
 fn main() {
     let opt = Opt::from_args();
     let input_file = format!("inputs/d{:0>2}.txt", opt.day);
-    let input_path = opt
-        .input
-        .unwrap_or_else(|| PathBuf::from(&input_file));
+    let input_path = opt.input.unwrap_or_else(|| PathBuf::from(&input_file));
 
     let input = match read_to_string(input_path) {
         Ok(input) => input,
-        Err(_) => panic!("Input not found: {input_file}")
+        Err(_) => panic!("Input not found: {input_file}"),
     };
 
     let start = Instant::now();
