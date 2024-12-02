@@ -17,25 +17,58 @@ impl Solution for AdventPuzzle {
         count.to_string()
     }
 
-    fn part2(_input: &str) -> String {
-        todo!()
+    fn part2(input: &str) -> String {
+
+        let count = input.lines()
+            .map(|line| get_list(line).expect("Could not parse input"))
+            .filter(|list| is_loosely_safely_ascending(list) || is_loosely_safely_descending(list))
+            .count();
+        count.to_string()
     }
 }
 
+fn safe_ascent(left: usize, right: usize) -> bool {
+    right > left && right - left <= 3
+}
+
+fn safe_descent(left: usize, right: usize) -> bool {
+    left > right && left - right <= 3
+}
+
 fn is_safely_ascending(list: &[usize]) -> bool {
-    list.windows(2).all(|w| {
-        let left = w[0];
-        let right = w[1];
-        right > left && right - left <= 3
-    })
+    list.windows(2).all(|w| safe_ascent(w[0] , w[1]))
 }
 
 fn is_safely_descending(list: &[usize]) -> bool {
-    list.windows(2).all(|w| {
-        let left = w[0];
-        let right = w[1];
-        right < left && left - right <= 3
-    })
+    list.windows(2).all(|w| safe_descent(w[0] , w[1]))
+}
+
+
+fn is_loosely_safely_ascending(list: &[usize]) -> bool {
+    // Not very memory efficient but 🤷🏻‍♂️
+    let mut new_list_left: Vec<_> = list.iter().copied().collect();
+    let mut new_list_right: Vec<_> = list.iter().copied().collect();
+
+    // remove first bad value
+    if let Some(i) = list.windows(2).position(|w| !safe_ascent(w[0], w[1])) {
+        new_list_left.remove(i);
+        new_list_right.remove(i + 1usize);
+    }
+
+    is_safely_ascending(&new_list_left) || is_safely_ascending(&new_list_right)
+}
+
+fn is_loosely_safely_descending(list: &[usize]) -> bool {
+    let mut new_list_left: Vec<_> = list.iter().copied().collect();
+    let mut new_list_right: Vec<_> = list.iter().copied().collect();
+
+    // remove first bad value
+    if let Some(i) = list.windows(2).position(|w| !safe_descent(w[0], w[1])) {
+        new_list_left.remove(i);
+        new_list_right.remove(i + 1usize);
+    }
+
+    is_safely_descending(&new_list_left) || is_safely_descending(&new_list_right)
 }
 
 fn parse_list(input: &str) -> IResult<&str, Vec<usize>, ErrorTree<&str>> {
@@ -62,10 +95,15 @@ mod test {
         assert_eq!(AdventPuzzle::part1(input), "2");
     }
 
-    #[ignore]
     #[test]
     fn test_part2() {
-        let input = "";
-        assert_eq!(AdventPuzzle::part2(input), "");
+        let input = "7 6 4 2 1
+1 2 7 8 9
+9 7 6 2 1
+1 3 2 4 5
+8 6 4 4 1
+1 3 6 7 9
+";
+        assert_eq!(AdventPuzzle::part2(input), "4");
     }
 }
