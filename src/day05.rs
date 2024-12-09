@@ -44,6 +44,7 @@ struct PageRule {
 }
 
 impl PageRule {
+    #[cfg(test)]
     fn new(before: usize, after: usize) -> Self {
         Self { before, after }
     }
@@ -129,7 +130,7 @@ impl PageOrder {
             if let Some((j, _)) = self[0..i]
                 .iter()
                 .enumerate()
-                .find(|(j, previous_page)| pages_after_current_page.contains(previous_page))
+                .find(|(_j, previous_page)| pages_after_current_page.contains(previous_page))
             {
                 self.0.swap(i, j);
                 self.fix(&page_rules);

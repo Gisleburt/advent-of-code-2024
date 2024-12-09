@@ -118,10 +118,10 @@ fn parse_line_do_dont(input: &str) -> IResult<&str, Instructions, ErrorTree<&str
         })
 }
 
-fn run_line_do_dont(input: &str) -> usize {
-    let (_, list) = parse_line_do_dont(input).expect("failed to parse line");
-    list.process()
-}
+// fn run_line_do_dont(input: &str) -> usize {
+//     let (_, list) = parse_line_do_dont(input).expect("failed to parse line");
+//     list.process()
+// }
 
 #[cfg(test)]
 mod test {

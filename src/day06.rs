@@ -6,7 +6,6 @@ use nom::multi::{many1, separated_list1};
 use nom::{IResult, Parser};
 use nom_supreme::error::ErrorTree;
 use nom_supreme::tag::complete::tag;
-use nom_supreme::ParserExt;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
@@ -213,7 +212,7 @@ impl Puzzle {
             .iter()
             .enumerate()
             .map(|(r, row)| {
-                row.iter().enumerate().map(move |(c, pos)| GuardPosition {
+                row.iter().enumerate().map(move |(c, _pos)| GuardPosition {
                     row: r as isize,
                     column: c as isize,
                 })
