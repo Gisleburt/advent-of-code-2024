@@ -15,12 +15,33 @@ pub struct AdventPuzzle;
 impl Solution for AdventPuzzle {
     fn part1(input: &str) -> String {
         let (_, mut puzzle) = parse_puzzle(input).unwrap();
-        while puzzle.process() {}
+        while puzzle.process() == PuzzleResult::Continue {}
         puzzle.count_visited().to_string()
     }
 
-    fn part2(_input: &str) -> String {
-        todo!()
+    fn part2(input: &str) -> String {
+        let (_, mut puzzle) = parse_puzzle(input).unwrap();
+        let initial_state = puzzle.clone();
+
+        while puzzle.process() == PuzzleResult::Continue {}
+
+        let positions = puzzle.get_all_visited();
+        positions
+            .iter()
+            .skip(1)
+            .filter(|pos| {
+                let mut new_puzzle = initial_state.clone();
+                new_puzzle.add_obstacle(pos);
+
+                loop {
+                    let final_result = new_puzzle.process();
+                    if final_result != PuzzleResult::Continue {
+                        return final_result == PuzzleResult::Looped;
+                    }
+                }
+            })
+            .count()
+            .to_string()
     }
 }
 
@@ -83,8 +104,23 @@ impl Display for PuzzleInputError {
 
 impl Error for PuzzleInputError {}
 
+#[derive(Copy, Clone, PartialEq, Debug)]
+struct Bump {
+    pos: GuardPosition,
+    dir: GuardDirection,
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+enum PuzzleResult {
+    Continue,
+    Exited,
+    Looped,
+}
+
+#[derive(Clone, PartialEq, Debug)]
 struct Puzzle {
     map: Vec<Vec<Position>>,
+    bumps: Vec<Bump>,
     guard_position: GuardPosition,
     guard_direction: GuardDirection,
 }
@@ -113,12 +149,13 @@ impl Puzzle {
 
         Ok(Puzzle {
             map,
+            bumps: Vec::new(),
             guard_position: guard_position.ok_or(PuzzleInputError::MissingStart)?,
             guard_direction: GuardDirection::Up,
         })
     }
 
-    fn process(&mut self) -> bool {
+    fn process(&mut self) -> PuzzleResult {
         let (row, col) = match self.guard_direction {
             GuardDirection::Up => (-1, 0),
             GuardDirection::Down => (1, 0),
@@ -132,18 +169,28 @@ impl Puzzle {
         };
 
         if !self.is_in_bounds(new_position) {
-            return false;
+            return PuzzleResult::Exited;
         }
 
         if self.map[new_position.row as usize][new_position.column as usize] == Position::Obstructed
         {
+            let bump = Bump {
+                pos: new_position,
+                dir: self.guard_direction,
+            };
+
+            if self.bumps.contains(&bump) {
+                return PuzzleResult::Looped;
+            }
+
+            self.bumps.push(bump);
             self.guard_direction = self.guard_direction.turn_right();
-            return true;
+            return PuzzleResult::Continue;
         }
 
         self.map[new_position.row as usize][new_position.column as usize] = Position::Visited;
         self.guard_position = new_position;
-        true
+        PuzzleResult::Continue
     }
 
     fn is_in_bounds(&self, GuardPosition { row, column }: GuardPosition) -> bool {
@@ -159,6 +206,24 @@ impl Puzzle {
             .flatten()
             .filter(|p| **p == Position::Visited)
             .count()
+    }
+
+    fn get_all_visited(&self) -> Vec<GuardPosition> {
+        self.map
+            .iter()
+            .enumerate()
+            .map(|(r, row)| {
+                row.iter().enumerate().map(move |(c, pos)| GuardPosition {
+                    row: r as isize,
+                    column: c as isize,
+                })
+            })
+            .flatten()
+            .collect()
+    }
+
+    fn add_obstacle(&mut self, GuardPosition { row, column }: &GuardPosition) {
+        self.map[*row as usize][*column as usize] = Position::Obstructed;
     }
 }
 
@@ -186,10 +251,19 @@ mod test {
         assert_eq!(AdventPuzzle::part1(input), "41");
     }
 
-    #[ignore]
     #[test]
     fn test_part2() {
-        let input = "";
-        assert_eq!(AdventPuzzle::part2(input), "");
+        let input = "....#.....
+.........#
+..........
+..#.......
+.......#..
+..........
+.#..^.....
+........#.
+#.........
+......#...
+";
+        assert_eq!(AdventPuzzle::part2(input), "6");
     }
 }
