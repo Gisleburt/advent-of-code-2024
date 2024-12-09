@@ -20,8 +20,14 @@ impl Solution for AdventPuzzle {
             .to_string()
     }
 
-    fn part2(_input: &str) -> String {
-        todo!()
+    fn part2(input: &str) -> String {
+        input
+            .lines()
+            .map(|line| parse_equation(line).unwrap().1)
+            .filter(|equation| equation.can_brute_force_part2())
+            .map(|equation| equation.total)
+            .sum::<usize>()
+            .to_string()
     }
 }
 
@@ -68,6 +74,56 @@ impl SolutionTree {
     }
 }
 
+#[derive(Clone, PartialEq, Debug)]
+struct SolutionTreeBranchPart2 {
+    add: SolutionTreePart2,
+    multiply: SolutionTreePart2,
+    concatenate: SolutionTreePart2,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+struct SolutionTreePart2 {
+    total: usize,
+    branches: Option<Box<SolutionTreeBranchPart2>>,
+}
+
+impl SolutionTreePart2 {
+    fn new(start: usize) -> Self {
+        Self {
+            total: start,
+            branches: None,
+        }
+    }
+
+    fn next(&mut self, next_value: usize) {
+        if let Some(branches) = &mut self.branches {
+            branches.add.next(next_value);
+            branches.multiply.next(next_value);
+            branches.concatenate.next(next_value);
+        } else {
+            self.branches = Some(Box::new(SolutionTreeBranchPart2 {
+                add: SolutionTreePart2::new(self.total + next_value),
+                multiply: SolutionTreePart2::new(self.total * next_value),
+                concatenate: SolutionTreePart2::new(
+                    format!("{}{}", self.total, next_value).parse().unwrap(),
+                ),
+            }))
+        }
+    }
+
+    fn could_equal(&self, total: usize) -> bool {
+        if self.total == total {
+            return true;
+        }
+        if let Some(branches) = &self.branches {
+            return branches.add.could_equal(total)
+                || branches.multiply.could_equal(total)
+                || branches.concatenate.could_equal(total);
+        }
+        return false;
+    }
+}
+
 struct Equation {
     total: usize,
     sequence: Vec<usize>,
@@ -76,6 +132,14 @@ struct Equation {
 impl Equation {
     fn can_brute_force(&self) -> bool {
         let mut solution_tree = SolutionTree::new(self.sequence[0]);
+        for next_value in &self.sequence[1..] {
+            solution_tree.next(*next_value);
+        }
+        solution_tree.could_equal(self.total)
+    }
+
+    fn can_brute_force_part2(&self) -> bool {
+        let mut solution_tree = SolutionTreePart2::new(self.sequence[0]);
         for next_value in &self.sequence[1..] {
             solution_tree.next(*next_value);
         }
@@ -118,10 +182,17 @@ mod test {
         assert_eq!(AdventPuzzle::part1(input), "3749");
     }
 
-    #[ignore]
     #[test]
     fn test_part2() {
-        let input = "";
-        assert_eq!(AdventPuzzle::part2(input), "");
+        let input = "190: 10 19
+3267: 81 40 27
+83: 17 5
+156: 15 6
+7290: 6 8 6 15
+161011: 16 10 13
+192: 17 8 14
+21037: 9 7 18 13
+292: 11 6 16 20";
+        assert_eq!(AdventPuzzle::part2(input), "11387");
     }
 }

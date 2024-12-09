@@ -15,8 +15,9 @@ $ cargo run -d <day> -p <part>
 
 eg
 
-```
+`
 $ cargo run -d 1 -p 2
+
 ```
 
 To use with arbitrary input files you can specify them like this:
