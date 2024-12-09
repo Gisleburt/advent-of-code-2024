@@ -1,5 +1,5 @@
 use crate::solution::Solution;
-use nom::character::complete::{anychar, digit1, not_line_ending};
+use nom::character::complete::{anychar, digit1};
 use nom::combinator::map_res;
 use nom::multi::{many1, many_till};
 use nom::sequence::{delimited, separated_pair};
@@ -20,15 +20,18 @@ impl Solution for AdventPuzzle {
     }
 
     fn part2(input: &str) -> String {
-        input
+        let instructions: Vec<_> = input
             .lines()
-            .map(|line| run_line_do_dont(line))
-            .sum::<usize>()
-            .to_string()
+            .map(|line| parse_line_do_dont(line).expect("Could not parse line"))
+            .map(|(_, instructions)| instructions)
+            .collect();
+
+        let combined_instructions = Instructions::combine(&instructions);
+        combined_instructions.process().to_string()
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 enum Instruction {
     Multiply(usize, usize),
     Do,
@@ -54,6 +57,14 @@ impl Instructions {
             }
         }
         total
+    }
+
+    fn combine(instructions: &[Instructions]) -> Instructions {
+        let new_instructions = instructions
+            .into_iter()
+            .flat_map(|i| i.0.iter().copied())
+            .collect::<Vec<_>>();
+        Instructions(new_instructions)
     }
 }
 
@@ -86,11 +97,10 @@ fn parse_instruction(input: &str) -> IResult<&str, Instruction, ErrorTree<&str>>
 
 fn parse_line_basic(input: &str) -> IResult<&str, Instructions, ErrorTree<&str>> {
     many1(many_till(anychar, parse_mul))
-        .terminated(not_line_ending)
         .parse(input)
-        .map(|(remainder, result)| {
+        .map(|(_, result)| {
             let instructions = Instructions(result.into_iter().map(|(_s, m)| m).collect());
-            (remainder, instructions)
+            ("", instructions) // Dump the remainder
         })
 }
 
@@ -101,11 +111,10 @@ fn run_line_basic(input: &str) -> usize {
 
 fn parse_line_do_dont(input: &str) -> IResult<&str, Instructions, ErrorTree<&str>> {
     many1(many_till(anychar, parse_instruction))
-        .terminated(not_line_ending)
         .parse(input)
-        .map(|(remainder, result)| {
+        .map(|(_, result)| {
             let instructions = Instructions(result.into_iter().map(|(_s, m)| m).collect());
-            (remainder, instructions)
+            ("", instructions) // Dump the remainder
         })
 }
 
@@ -159,6 +168,13 @@ mod test {
                 Instruction::Multiply(8, 5)
             ])
         );
+    }
+
+    #[test]
+    fn test_part2_multi_line() {
+        let input = "don't()
+mul(5,5)do()mul(3,3)";
+        assert_eq!(AdventPuzzle::part2(input), "9");
     }
 
     #[test]
